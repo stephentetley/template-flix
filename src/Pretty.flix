@@ -18,6 +18,9 @@
 
 use TemplateFlix/PrettyLib.{Doc};
 use TemplateFlix/PrettyLib.{text, int32, ppName};
+
+use TemplateFlix/Syntax.{Exp};
+use TemplateFlix/Syntax.Exp.{SNameE};
 use TemplateFlix/Syntax.{Lit};
 use TemplateFlix/Syntax.Lit.{CharL, StringL, Int32L};
 use TemplateFlix/Syntax.{Pat};
@@ -34,6 +37,11 @@ namespace TemplateFlix/Pretty {
     pub def ppPat(prec: Int32, x: Pat): Doc = match x { 
         case LitP(l) => ppLit(prec, l)
         case VarP(v) => ppName(v)
+    }
+
+    pub def ppExp(_prec: Int32, x: Exp): Doc = match x { 
+        case SNameE(s) => ppName(s)
+        case _ => text("TODO")
     }
 
     pub def ppString(x: String): Doc = text(x)

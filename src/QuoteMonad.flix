@@ -14,30 +14,14 @@
  * limitations under the License.
  */
 
+use TemplateFlix/Syntax.Name;
 
+namespace TemplateFlix/QuoteMonad {
 
-namespace TemplateFlix/Syntax {
+    pub opaque type QuoteM[st, a] = st ~> (a, st)
+    
+    
+    pub def newName(x: String): QuoteM[Name] = panic("newName " + x)
 
-    pub opaque type Name = String
-
-    pub enum Lit { 
-        case CharL(Char)
-        case StringL(String)
-        case Int32L(Int32)
-    }
-
-    pub enum Pat { 
-        case LitP(Lit)
-        case VarP(Name)
-    }
-
-    pub enum Exp { 
-        case SNameE(Name)
-        case LitE(Lit)
-        case ApplyE(Exp, List[Exp])
-        case UnaryE(String, Exp)
-        case BinaryE(Exp, String, Exp)
-        case IfThenElseE(Exp, Exp, Exp)         // { if (e1) e2 else e3 }
-        case TupleE(List[Exp])
-    }
+    
 }
