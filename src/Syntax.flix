@@ -20,6 +20,11 @@ namespace TemplateFlix/Syntax {
 
     pub opaque type Name = String
 
+
+    pub enum Decl {
+        case Enum(Name, TyParams, List[Case])
+    }
+
     pub enum Lit { 
         case CharL(Char)
         case StringL(String)
@@ -40,4 +45,20 @@ namespace TemplateFlix/Syntax {
         case IfThenElseE(Exp, Exp, Exp)         // { if (e1) e2 else e3 }
         case TupleE(List[Exp])
     }
+
+    pub enum Case {
+        case Case(Name, Type)
+    }
+
+    pub enum Type {
+        case Tunit()
+    }
+
+    pub enum TyParams {
+        case Elided()
+        case Explicit(List[ContextBound])
+    }
+
+    type alias ContextBound = { ident: Name, tparams: List[Type] }
+
 }

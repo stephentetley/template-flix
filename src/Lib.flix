@@ -32,6 +32,9 @@ namespace TemplateFlix/Lib {
     type alias ExpQ = QuoteM[Exp]
     type alias PatQ = QuoteM[Pat]
 
+    pub def charL(x: Char): Lit = CharL(x)
+    pub def stringL(x: String): Lit = StringL(x)
+    pub def int32L(x: Int32): Lit = Int32L(x)
 
     pub def litP(x: Lit): PatQ = return(LitP(x))
 
