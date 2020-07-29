@@ -17,11 +17,11 @@
 
 
 use TemplateFlix/PrettyLib.{Doc};
-use TemplateFlix/PrettyLib.{text, int32, ppName, parens, commaSep};
+use TemplateFlix/PrettyLib.{text, int32, ppName, parens, commaSep, squotes, dquotes};
 use TemplateFlix/PrettyLib.{<>, <<>>};
 
 use TemplateFlix/Syntax.{Exp};
-use TemplateFlix/Syntax.Exp.{SNameE};
+use TemplateFlix/Syntax.Exp.{SNameE, LitE};
 use TemplateFlix/Syntax.{Lit};
 use TemplateFlix/Syntax.Lit.{CharL, StringL, Int32L};
 use TemplateFlix/Syntax.{Pat};
@@ -32,9 +32,9 @@ namespace TemplateFlix/Pretty {
     pub def noPrec(): Int32 = 0
 
     pub def ppLit(_prec: Int32, x: Lit): Doc = match x { 
-        case CharL(c) => text(Char.toString(c))
-        case StringL(s) => ppString(s)
-        case Int32L(d) => int32(d)
+        case CharL(c)   => squotes(text(Char.toString(c)))
+        case StringL(s) => dquotes(ppString(s))
+        case Int32L(d)  => int32(d)
     }
 
     pub def ppPat(prec: Int32, x: Pat): Doc = match x { 
@@ -45,8 +45,9 @@ namespace TemplateFlix/Pretty {
         case TupleP(ps)         => parens(commaSep(List.map(ppPat(noPrec()), ps)))
     }
 
-    pub def ppExp(_prec: Int32, x: Exp): Doc = match x { 
-        case SNameE(s) => ppName(s)
+    pub def ppExp(prec: Int32, x: Exp): Doc = match x { 
+        case SNameE(s)          => ppName(s)
+        case LitE(l)            => ppLit(prec, l)
         case _ => text("TODO")
     }
 

@@ -15,6 +15,7 @@
  */
 
 use TemplateFlix/Syntax.Name;
+use TemplateFlix/Syntax.Name.{Name};
 
 namespace TemplateFlix/QuoteMonad {
 
@@ -61,7 +62,7 @@ namespace TemplateFlix/QuoteMonad {
         case mx :: rs   => sequenceHelper(rs, ys -> bind(mx, x-> k(x :: ys)))    
     }
 
-    pub def newName(x: String): QuoteM[Name] = panic("newName " + x)
+    pub def newName(x: String): QuoteM[Name] = return(Name(x))
 
     // reify?
 }

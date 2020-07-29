@@ -90,23 +90,46 @@ namespace TemplateFlix/PrettyLib {
         ap(lift3(f, r1, r2, r3), r4)
 
 
-    pub def empty(): Doc = 
-        return(Text/PrettyPrint.empty())
+    pub def empty(): Doc = return(Text/PrettyPrint.empty())
 
-    pub def semi(): Doc = 
-        return(Text/PrettyPrint.semi())
+    pub def semi(): Doc = return(Text/PrettyPrint.semi())
 
-    pub def text(x: String): Doc = 
-        return(Text/PrettyPrint.text(x))
+    pub def comma(): Doc = return(Text/PrettyPrint.comma())
 
-    pub def int32(x: Int32): Doc = 
-        return(Text/PrettyPrint.int32(x))
+    pub def colon(): Doc = return(Text/PrettyPrint.colon())
 
-    pub def parens(d: Doc): Doc = 
-        map(Text/PrettyPrint.parens, d)
+    pub def dcolon(): Doc = return(Text/PrettyPrint.text("::"))
 
-    pub def comma(): Doc = 
-        return(Text/PrettyPrint.comma())
+    pub def space(): Doc = return(Text/PrettyPrint.space())
+
+    pub def equals(): Doc = return(Text/PrettyPrint.equals())
+
+    pub def arrow(): Doc = return(Text/PrettyPrint.text("->"))
+
+    pub def lparen(): Doc = return(Text/PrettyPrint.lparen())
+    
+    pub def rparen(): Doc = return(Text/PrettyPrint.rparen())
+
+    pub def lbrace(): Doc = return(Text/PrettyPrint.lbrace())
+
+    pub def rbrace(): Doc = return(Text/PrettyPrint.rbrace())
+
+    pub def lbracket(): Doc = return(Text/PrettyPrint.lbracket())
+
+    pub def rbracket(): Doc = return(Text/PrettyPrint.rbracket())
+
+
+    pub def text(x: String): Doc = return(Text/PrettyPrint.text(x))
+
+    pub def int32(x: Int32): Doc = return(Text/PrettyPrint.int32(x))
+
+    pub def parens(d: Doc): Doc = map(Text/PrettyPrint.parens, d)
+
+    pub def braces(d: Doc): Doc = map(Text/PrettyPrint.braces, d)
+
+    pub def squotes(d: Doc): Doc = map(Text/PrettyPrint.squotes, d)
+
+    pub def dquotes(d: Doc): Doc = map(Text/PrettyPrint.dquotes, d)
 
     pub def hcat(docs: List[Doc]): Doc = 
         let* ds1 = sequence(docs);
@@ -128,6 +151,9 @@ namespace TemplateFlix/PrettyLib {
         use Text/PrettyPrint.{beside};
         lift2(beside, d1, d2)
 
+    pub def <<>>(d1: Doc, d2: Doc): Doc = 
+        use Text/PrettyPrint.{besideSpace};
+        lift2(besideSpace, d1, d2)
 
 
     /// TODO - Haskell is tracking fresh names here?
