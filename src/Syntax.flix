@@ -34,6 +34,9 @@ namespace TemplateFlix/Syntax {
     pub enum Pat { 
         case LitP(Lit)
         case VarP(Name)
+        case TagP(Name, Option[Pat])
+        case TupleP(List[Pat])
+
     }
 
     pub enum Exp { 

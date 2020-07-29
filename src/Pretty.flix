@@ -17,16 +17,19 @@
 
 
 use TemplateFlix/PrettyLib.{Doc};
-use TemplateFlix/PrettyLib.{text, int32, ppName};
+use TemplateFlix/PrettyLib.{text, int32, ppName, parens, commaSep};
+use TemplateFlix/PrettyLib.{<>, <<>>};
 
 use TemplateFlix/Syntax.{Exp};
 use TemplateFlix/Syntax.Exp.{SNameE};
 use TemplateFlix/Syntax.{Lit};
 use TemplateFlix/Syntax.Lit.{CharL, StringL, Int32L};
 use TemplateFlix/Syntax.{Pat};
-use TemplateFlix/Syntax.Pat.{LitP, VarP};
+use TemplateFlix/Syntax.Pat.{LitP, VarP, TagP, TupleP};
 
 namespace TemplateFlix/Pretty {
+
+    pub def noPrec(): Int32 = 0
 
     pub def ppLit(_prec: Int32, x: Lit): Doc = match x { 
         case CharL(c) => text(Char.toString(c))
@@ -35,8 +38,11 @@ namespace TemplateFlix/Pretty {
     }
 
     pub def ppPat(prec: Int32, x: Pat): Doc = match x { 
-        case LitP(l) => ppLit(prec, l)
-        case VarP(v) => ppName(v)
+        case LitP(l)            => ppLit(prec, l)
+        case VarP(v)            => ppName(v)
+        case TagP(n, None)      => ppName(n)
+        case TagP(n, Some(p))   => ppName(n) <> ppPat(prec, p)
+        case TupleP(ps)         => parens(commaSep(List.map(ppPat(noPrec()), ps)))
     }
 
     pub def ppExp(_prec: Int32, x: Exp): Doc = match x { 
