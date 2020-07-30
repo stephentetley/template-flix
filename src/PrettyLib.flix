@@ -25,6 +25,12 @@ namespace TemplateFlix/PrettyLib {
 
     pub opaque type PPMonad[a] = State -> (a, State)
 
+    pub def runPretty(mx: PPMonad[a]): a = 
+        apply1(mx, Map.empty()) |> fst
+
+    pub def show(x: Doc): String = 
+        runPretty(x) |> Text/PrettyPrint.prettyPrint(120)
+
     pub def return(x: a): PPMonad[a] = 
         PPMonad(s -> (x, s))
 
@@ -146,6 +152,7 @@ namespace TemplateFlix/PrettyLib {
 
     pub def commaSep(xs: List[Doc]): Doc = hcat(punctuate(comma(), xs))
 
+    pub def commaSpaceSep(xs: List[Doc]): Doc = hcat(punctuate(text(", "), xs))
 
     pub def <>(d1: Doc, d2: Doc): Doc = 
         use Text/PrettyPrint.{beside};

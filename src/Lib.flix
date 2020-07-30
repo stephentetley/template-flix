@@ -40,6 +40,16 @@ namespace TemplateFlix/Lib {
 
     pub def varP(x: Name): PatQ = return(VarP(x))
 
+
+    pub def litE(x: Lit): ExpQ = return(LitE(x))
+
+    pub def applyE(x: ExpQ, xs: List[ExpQ]): ExpQ = 
+        use TemplateFlix/QuoteMonad.flatMap;
+        let* e = x;
+        let* es = sequence(xs);
+        return(ApplyE(e, es))
+
+
     pub def tupleE(xs: List[ExpQ]): ExpQ = 
         use TemplateFlix/QuoteMonad.flatMap;
         let* es = sequence(xs);

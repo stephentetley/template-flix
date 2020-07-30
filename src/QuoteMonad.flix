@@ -23,6 +23,9 @@ namespace TemplateFlix/QuoteMonad {
     
     type alias State = Unit
 
+    pub def runQ(mx: QuoteM[a]): a & Impure = 
+        apply1(mx, ()) |> fst
+
     pub def return(x: a): QuoteM[a] = 
         QuoteM(s -> (x, s) as & Impure)
 

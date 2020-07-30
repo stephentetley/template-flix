@@ -17,11 +17,11 @@
 
 
 use TemplateFlix/PrettyLib.{Doc};
-use TemplateFlix/PrettyLib.{text, int32, ppName, parens, commaSep, squotes, dquotes};
+use TemplateFlix/PrettyLib.{text, int32, ppName, parens, commaSep, commaSpaceSep, squotes, dquotes};
 use TemplateFlix/PrettyLib.{<>, <<>>};
 
 use TemplateFlix/Syntax.{Exp};
-use TemplateFlix/Syntax.Exp.{SNameE, LitE};
+use TemplateFlix/Syntax.Exp.{SNameE, LitE, ApplyE, UnaryE, BinaryE, TupleE};
 use TemplateFlix/Syntax.{Lit};
 use TemplateFlix/Syntax.Lit.{CharL, StringL, Int32L};
 use TemplateFlix/Syntax.{Pat};
@@ -42,12 +42,17 @@ namespace TemplateFlix/Pretty {
         case VarP(v)            => ppName(v)
         case TagP(n, None)      => ppName(n)
         case TagP(n, Some(p))   => ppName(n) <> ppPat(prec, p)
-        case TupleP(ps)         => parens(commaSep(List.map(ppPat(noPrec()), ps)))
+        case TupleP(ps)         => parens(commaSep(List.map(ppPat(noPrec()), ps)))        
     }
 
     pub def ppExp(prec: Int32, x: Exp): Doc = match x { 
-        case SNameE(s)          => ppName(s)
-        case LitE(l)            => ppLit(prec, l)
+        case SNameE(s)              => ppName(s)
+        case LitE(l)                => ppLit(prec, l)
+        case ApplyE(e1, es)         => ppExp(prec, e1) <> parens(commaSpaceSep(List.map(ppExp(prec), es)))
+        case UnaryE(op, e)          => text(op) <> ppExp(prec, e)
+        case BinaryE(e1, op, e2)    => ppExp(prec, e1) <> text(op) <> ppExp(prec, e2)
+
+        case TupleE(es)             => parens(commaSpaceSep(List.map(ppExp(prec), es)))
         case _ => text("TODO")
     }
 
