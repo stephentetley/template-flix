@@ -17,15 +17,20 @@
 
 
 use TemplateFlix/PrettyLib.{Doc};
-use TemplateFlix/PrettyLib.{text, int32, ppName, parens, commaSep, commaSpaceSep, squotes, dquotes};
+use TemplateFlix/PrettyLib.{text, int32, ppName, parens, commaSep, commaSpaceSep, squotes, dquotes, 
+    equals, braces, brackets};
 use TemplateFlix/PrettyLib.{<>, <<>>};
 
 use TemplateFlix/Syntax.{Exp};
-use TemplateFlix/Syntax.Exp.{SNameE, LitE, ApplyE, UnaryE, BinaryE, TupleE};
+use TemplateFlix/Syntax.Exp.{SNameE, LitE, ApplyE, UnaryE, BinaryE, IfThenElseE, TupleE, RecordLitE, 
+    ArrayLitE};
 use TemplateFlix/Syntax.{Lit};
 use TemplateFlix/Syntax.Lit.{CharL, StringL, Int32L};
 use TemplateFlix/Syntax.{Pat};
 use TemplateFlix/Syntax.Pat.{LitP, VarP, TagP, TupleP};
+use TemplateFlix/Syntax.{RecordField};
+use TemplateFlix/Syntax.{Typ};
+use TemplateFlix/Syntax.Typ.{UnitT, VarT, TupleT};
 
 namespace TemplateFlix/Pretty {
 
@@ -46,15 +51,27 @@ namespace TemplateFlix/Pretty {
     }
 
     pub def ppExp(prec: Int32, x: Exp): Doc = match x { 
-        case SNameE(s)              => ppName(s)
-        case LitE(l)                => ppLit(prec, l)
-        case ApplyE(e1, es)         => ppExp(prec, e1) <> parens(commaSpaceSep(List.map(ppExp(prec), es)))
-        case UnaryE(op, e)          => text(op) <> ppExp(prec, e)
-        case BinaryE(e1, op, e2)    => ppExp(prec, e1) <> text(op) <> ppExp(prec, e2)
-
-        case TupleE(es)             => parens(commaSpaceSep(List.map(ppExp(prec), es)))
-        case _ => text("TODO")
+        case SNameE(s)                  => ppName(s)
+        case LitE(l)                    => ppLit(prec, l)
+        case ApplyE(e1, es)             => ppExp(prec, e1) <> parens(commaSpaceSep(List.map(ppExp(prec), es)))
+        case UnaryE(op, e)              => text(op) <> ppExp(prec, e)
+        case BinaryE(e1, op, e2)        => ppExp(prec, e1) <> text(op) <> ppExp(prec, e2)
+        case IfThenElseE(e1, e2, e3)    => text("if") <<>> parens(ppExp(prec, e1)) <<>> ppExp(prec, e2) <<>> text("else") <<>> ppExp(prec, e3)
+        case TupleE(es)                 => parens(commaSpaceSep(List.map(ppExp(prec), es)))
+        case RecordLitE(xs)             => braces(commaSpaceSep(List.map(ppRecordField(prec), xs)))
+        case ArrayLitE(es)              => brackets(commaSpaceSep(List.map(ppExp(prec), es)))
     }
+
+    def ppRecordField(prec: Int32, x: RecordField): Doc = 
+        ppName(x.label) <<>> equals() <<>> ppExp(prec, x.value)
+
+    pub def ppTyp(x: Typ): Doc = match x {
+        case UnitT              => text("Unit")
+        case VarT(v)            => ppName(v)
+        case TupleT(ts)         => parens(commaSpaceSep(List.map(ppTyp, ts)))
+        case _                  => text("ppTyp")
+    }
+        
 
     pub def ppString(x: String): Doc = text(x)
 }

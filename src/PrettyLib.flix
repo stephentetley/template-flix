@@ -133,6 +133,8 @@ namespace TemplateFlix/PrettyLib {
 
     pub def braces(d: Doc): Doc = map(Text/PrettyPrint.braces, d)
 
+    pub def brackets(d: Doc): Doc = map(Text/PrettyPrint.brackets, d)
+
     pub def squotes(d: Doc): Doc = map(Text/PrettyPrint.squotes, d)
 
     pub def dquotes(d: Doc): Doc = map(Text/PrettyPrint.dquotes, d)

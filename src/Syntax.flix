@@ -47,16 +47,18 @@ namespace TemplateFlix/Syntax {
         case BinaryE(Exp, String, Exp)
         case IfThenElseE(Exp, Exp, Exp)         // { if (e1) e2 else e3 }
         case TupleE(List[Exp])
+        case RecordLitE(List[RecordField])
+        case ArrayLitE(List[Exp])
     }
 
     pub enum Case {
-        case Case(Name, Type)
+        case Case(Name, Typ)
     }
 
-    pub enum Type {
-        case UnitT()
+    pub enum Typ {
+        case UnitT
         case VarT(Name)
-        case TupleT(List[Type])
+        case TupleT(List[Typ])
         case RecordT(List[RecordFieldType], Option[Name])
     }
 
@@ -65,8 +67,10 @@ namespace TemplateFlix/Syntax {
         case Explicit(List[ContextBound])
     }
 
-    type alias RecordFieldType = { label: Name, tpe: Type }
+    type alias RecordField = { label: Name, value: Exp }
 
-    type alias ContextBound = { ident: Name, tparams: List[Type] }
+    type alias RecordFieldType = { label: Name, tpe: Typ }
+
+    type alias ContextBound = { ident: Name, tparams: List[Typ] }
 
 }
