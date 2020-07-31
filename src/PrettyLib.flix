@@ -112,6 +112,8 @@ namespace TemplateFlix/PrettyLib {
 
     pub def arrow(): Doc = return(Text/PrettyPrint.text("->"))
 
+    pub def pipe(): Doc = return(Text/PrettyPrint.text("|"))
+
     pub def lparen(): Doc = return(Text/PrettyPrint.lparen())
     
     pub def rparen(): Doc = return(Text/PrettyPrint.rparen())
@@ -142,6 +144,10 @@ namespace TemplateFlix/PrettyLib {
     pub def hcat(docs: List[Doc]): Doc = 
         let* ds1 = sequence(docs);
         return(Text/PrettyPrint.hcat(ds1))
+
+    pub def vsep(docs: List[Doc]): Doc = 
+        let* ds1 = sequence(docs);
+        return(Text/PrettyPrint.vsep(ds1))
 
     pub def punctuate(sep: Doc, docs: List[Doc]): List[Doc] = punctuateHelper(sep, docs, xs -> xs)
     

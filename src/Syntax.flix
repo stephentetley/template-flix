@@ -21,44 +21,43 @@ namespace TemplateFlix/Syntax {
     pub opaque type Name = String
 
 
-    pub enum Decl {
+    pub enum Declaration {
         case Enum(Name, TyParams, List[Case])
     }
 
-    pub enum Lit { 
+    pub enum Literal { 
+        case UnitL
         case CharL(Char)
         case StringL(String)
         case Int32L(Int32)
     }
 
-    pub enum Pat { 
-        case LitP(Lit)
+    pub enum Pattern { 
+        case LitP(Literal)
         case VarP(Name)
-        case TagP(Name, Option[Pat])
-        case TupleP(List[Pat])
+        case TagP(Name, Option[Pattern])
+        case TupleP(List[Pattern])
 
     }
 
-    pub enum Exp { 
+    pub enum Expression { 
         case SNameE(Name)
-        case LitE(Lit)                          // { 1 } or { "hello"} etc.
-        case ApplyE(Exp, List[Exp])             // { max(1, 2) }
-        case UnaryE(String, Exp)                // { !true }
-        case BinaryE(Exp, String, Exp)
-        case IfThenElseE(Exp, Exp, Exp)         // { if (e1) e2 else e3 }
-        case TupleE(List[Exp])
+        case LitE(Literal)                                          // { 1 } or { "hello"} etc.
+        case ApplyE(Expression, List[Expression])                   // { max(1, 2) }
+        case UnaryE(String, Expression)                             // { !true }
+        case BinaryE(Expression, String, Expression)
+        case IfThenElseE(Expression, Expression, Expression)        // { if (e1) e2 else e3 }
+        case TupleE(List[Expression])
         case RecordLitE(List[RecordField])
-        case ArrayLitE(List[Exp])
+        case ArrayLitE(List[Expression])
     }
 
-    pub enum Case {
-        case Case(Name, Typ)
-    }
+    type alias Case = { ident: Name, tpe: Type }
 
-    pub enum Typ {
+    pub enum Type {
         case UnitT
         case VarT(Name)
-        case TupleT(List[Typ])
+        case TupleT(List[Type])
         case RecordT(List[RecordFieldType], Option[Name])
     }
 
@@ -67,10 +66,10 @@ namespace TemplateFlix/Syntax {
         case Explicit(List[ContextBound])
     }
 
-    type alias RecordField = { label: Name, value: Exp }
+    type alias RecordField = { label: Name, value: Expression }
 
-    type alias RecordFieldType = { label: Name, tpe: Typ }
+    type alias RecordFieldType = { label: Name, tpe: Type }
 
-    type alias ContextBound = { ident: Name, tparams: List[Typ] }
+    type alias ContextBound = { ident: Name, tparams: List[Type] }
 
 }

@@ -18,60 +18,80 @@
 
 use TemplateFlix/PrettyLib.{Doc};
 use TemplateFlix/PrettyLib.{text, int32, ppName, parens, commaSep, commaSpaceSep, squotes, dquotes, 
-    equals, braces, brackets};
+    braces, brackets, equals, colon, pipe, vsep};
 use TemplateFlix/PrettyLib.{<>, <<>>};
 
-use TemplateFlix/Syntax.{Exp};
-use TemplateFlix/Syntax.Exp.{SNameE, LitE, ApplyE, UnaryE, BinaryE, IfThenElseE, TupleE, RecordLitE, 
+use TemplateFlix/Syntax.{Case};
+use TemplateFlix/Syntax.{Declaration};
+use TemplateFlix/Syntax.Declaration.{Enum};
+use TemplateFlix/Syntax.{Expression};
+use TemplateFlix/Syntax.Expression.{SNameE, LitE, ApplyE, UnaryE, BinaryE, IfThenElseE, TupleE, RecordLitE, 
     ArrayLitE};
-use TemplateFlix/Syntax.{Lit};
-use TemplateFlix/Syntax.Lit.{CharL, StringL, Int32L};
-use TemplateFlix/Syntax.{Pat};
-use TemplateFlix/Syntax.Pat.{LitP, VarP, TagP, TupleP};
+use TemplateFlix/Syntax.{Literal};
+use TemplateFlix/Syntax.Literal.{UnitL, CharL, StringL, Int32L};
+use TemplateFlix/Syntax.{Pattern};
+use TemplateFlix/Syntax.Pattern.{LitP, VarP, TagP, TupleP};
 use TemplateFlix/Syntax.{RecordField};
-use TemplateFlix/Syntax.{Typ};
-use TemplateFlix/Syntax.Typ.{UnitT, VarT, TupleT};
+use TemplateFlix/Syntax.{RecordFieldType};
+use TemplateFlix/Syntax.{Type};
+use TemplateFlix/Syntax.Type.{UnitT, VarT, TupleT, RecordT};
 
 namespace TemplateFlix/Pretty {
 
-    pub def noPrec(): Int32 = 0
+    def noPrec(): Int32 = 0
 
-    pub def ppLit(_prec: Int32, x: Lit): Doc = match x { 
-        case CharL(c)   => squotes(text(Char.toString(c)))
-        case StringL(s) => dquotes(ppString(s))
-        case Int32L(d)  => int32(d)
+    pub def ppDeclaration(x: Declaration): Doc = match x { 
+        case Enum(v, _, cs)           => text("enum") <<>> ppName(v) <<>> braces(vsep(List.map(ppEnumCase, cs)))
     }
 
-    pub def ppPat(prec: Int32, x: Pat): Doc = match x { 
-        case LitP(l)            => ppLit(prec, l)
+    pub def ppEnumCase(x: Case): Doc = match x.tpe { 
+        case UnitT          => text("case") <<>> ppName(x.ident)
+        case TupleT(_)      => text("case") <<>> ppName(x.ident) <> ppType(x.tpe)
+        case _              => text("case") <<>> ppName(x.ident) <> parens(ppType(x.tpe))
+    }
+
+    pub def ppLiteral(_prec: Int32, x: Literal): Doc = match x { 
+        case UnitL              => text("()")
+        case CharL(c)           => squotes(text(Char.toString(c)))
+        case StringL(s)         => dquotes(ppString(s))
+        case Int32L(d)          => int32(d)
+    }
+
+    pub def ppPattern(prec: Int32, x: Pattern): Doc = match x { 
+        case LitP(l)            => ppLiteral(prec, l)
         case VarP(v)            => ppName(v)
         case TagP(n, None)      => ppName(n)
-        case TagP(n, Some(p))   => ppName(n) <> ppPat(prec, p)
-        case TupleP(ps)         => parens(commaSep(List.map(ppPat(noPrec()), ps)))        
+        case TagP(n, Some(p))   => ppName(n) <> ppPattern(prec, p)
+        case TupleP(ps)         => parens(commaSep(List.map(ppPattern(noPrec()), ps)))        
     }
 
-    pub def ppExp(prec: Int32, x: Exp): Doc = match x { 
+    pub def ppExpression(prec: Int32, x: Expression): Doc = match x { 
         case SNameE(s)                  => ppName(s)
-        case LitE(l)                    => ppLit(prec, l)
-        case ApplyE(e1, es)             => ppExp(prec, e1) <> parens(commaSpaceSep(List.map(ppExp(prec), es)))
-        case UnaryE(op, e)              => text(op) <> ppExp(prec, e)
-        case BinaryE(e1, op, e2)        => ppExp(prec, e1) <> text(op) <> ppExp(prec, e2)
-        case IfThenElseE(e1, e2, e3)    => text("if") <<>> parens(ppExp(prec, e1)) <<>> ppExp(prec, e2) <<>> text("else") <<>> ppExp(prec, e3)
-        case TupleE(es)                 => parens(commaSpaceSep(List.map(ppExp(prec), es)))
+        case LitE(l)                    => ppLiteral(prec, l)
+        case ApplyE(e1, es)             => ppExpression(prec, e1) <> parens(commaSpaceSep(List.map(ppExpression(prec), es)))
+        case UnaryE(op, e)              => text(op) <> ppExpression(prec, e)
+        case BinaryE(e1, op, e2)        => ppExpression(prec, e1) <> text(op) <> ppExpression(prec, e2)
+        case IfThenElseE(e1, e2, e3)    => text("if") <<>> parens(ppExpression(prec, e1)) <<>> ppExpression(prec, e2) <<>> text("else") <<>> ppExpression(prec, e3)
+        case TupleE(es)                 => parens(commaSpaceSep(List.map(ppExpression(prec), es)))
         case RecordLitE(xs)             => braces(commaSpaceSep(List.map(ppRecordField(prec), xs)))
-        case ArrayLitE(es)              => brackets(commaSpaceSep(List.map(ppExp(prec), es)))
+        case ArrayLitE(es)              => brackets(commaSpaceSep(List.map(ppExpression(prec), es)))
     }
 
     def ppRecordField(prec: Int32, x: RecordField): Doc = 
-        ppName(x.label) <<>> equals() <<>> ppExp(prec, x.value)
+        ppName(x.label) <<>> equals() <<>> ppExpression(prec, x.value)
 
-    pub def ppTyp(x: Typ): Doc = match x {
-        case UnitT              => text("Unit")
-        case VarT(v)            => ppName(v)
-        case TupleT(ts)         => parens(commaSpaceSep(List.map(ppTyp, ts)))
-        case _                  => text("ppTyp")
+    pub def ppType(x: Type): Doc = match x {
+        case UnitT                      => text("Unit")
+        case VarT(v)                    => ppName(v)
+        case TupleT(ts)                 => parens(commaSpaceSep(List.map(ppType, ts)))
+        case RecordT(ts, Some(v))       => braces(commaSpaceSep(List.map(ppRecordFieldType, ts)) <> pipe() <> ppName(v))
+        case RecordT(ts, None)          => braces(commaSpaceSep(List.map(ppRecordFieldType, ts)))
+        
     }
         
+    def ppRecordFieldType(x: RecordFieldType): Doc = 
+        ppName(x.label) <> colon() <<>> ppType(x.tpe)
+
 
     pub def ppString(x: String): Doc = text(x)
 }

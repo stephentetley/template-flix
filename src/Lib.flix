@@ -17,40 +17,41 @@
 use TemplateFlix/QuoteMonad.{QuoteM};
 use TemplateFlix/QuoteMonad.{return, sequence};
 
-use TemplateFlix/Syntax.{Exp};
-use TemplateFlix/Syntax.Exp.{SNameE, LitE, ApplyE,  UnaryE, BinaryE, 
+use TemplateFlix/Syntax.{Expression};
+use TemplateFlix/Syntax.Expression.{SNameE, LitE, ApplyE,  UnaryE, BinaryE, 
     IfThenElseE, TupleE};
-use TemplateFlix/Syntax.{Lit};
-use TemplateFlix/Syntax.Lit.{CharL, StringL, Int32L};
+use TemplateFlix/Syntax.{Literal};
+use TemplateFlix/Syntax.Literal.{UnitL, CharL, StringL, Int32L};
 use TemplateFlix/Syntax.{Name};
 use TemplateFlix/Syntax.Name.{Name};
-use TemplateFlix/Syntax.{Pat};
-use TemplateFlix/Syntax.Pat.{LitP, VarP};
+use TemplateFlix/Syntax.{Pattern};
+use TemplateFlix/Syntax.Pattern.{LitP, VarP};
 
 namespace TemplateFlix/Lib {
 
-    type alias ExpQ = QuoteM[Exp]
-    type alias PatQ = QuoteM[Pat]
+    type alias ExpressionQ = QuoteM[Expression]
+    type alias PatternQ = QuoteM[Pattern]
 
-    pub def charL(x: Char): Lit = CharL(x)
-    pub def stringL(x: String): Lit = StringL(x)
-    pub def int32L(x: Int32): Lit = Int32L(x)
+    pub def unitL(): Literal = UnitL
+    pub def charL(x: Char): Literal = CharL(x)
+    pub def stringL(x: String): Literal = StringL(x)
+    pub def int32L(x: Int32): Literal = Int32L(x)
 
-    pub def litP(x: Lit): PatQ = return(LitP(x))
+    pub def litP(x: Literal): PatternQ = return(LitP(x))
 
-    pub def varP(x: Name): PatQ = return(VarP(x))
+    pub def varP(x: Name): PatternQ = return(VarP(x))
 
 
-    pub def litE(x: Lit): ExpQ = return(LitE(x))
+    pub def litE(x: Literal): ExpressionQ = return(LitE(x))
 
-    pub def applyE(x: ExpQ, xs: List[ExpQ]): ExpQ = 
+    pub def applyE(x: ExpressionQ, xs: List[ExpressionQ]): ExpressionQ = 
         use TemplateFlix/QuoteMonad.flatMap;
         let* e = x;
         let* es = sequence(xs);
         return(ApplyE(e, es))
 
 
-    pub def tupleE(xs: List[ExpQ]): ExpQ = 
+    pub def tupleE(xs: List[ExpressionQ]): ExpressionQ = 
         use TemplateFlix/QuoteMonad.flatMap;
         let* es = sequence(xs);
         return(TupleE(es))
