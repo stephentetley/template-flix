@@ -22,14 +22,21 @@ namespace TemplateFlix/Syntax {
 
 
     pub enum Declaration {
-        case Enum(Name, TyParams, List[Case])
+        case EnumD(Name, TyParams, List[Case])
+        case RelationD(Name, TyParams, List[Attribute])
     }
 
     pub enum Literal { 
         case UnitL
+        case NullL
+        case TrueL
+        case FalseL
         case CharL(Char)
         case StringL(String)
+        case Int8L(Int8)
+        case Int16L(Int16)
         case Int32L(Int32)
+        case Int64L(Int64)
     }
 
     pub enum Pattern { 
@@ -53,6 +60,8 @@ namespace TemplateFlix/Syntax {
     }
 
     type alias Case = { ident: Name, tpe: Type }
+    type alias Attribute = { ident: Name, tpe: Type }
+
 
     pub enum Type {
         case UnitT

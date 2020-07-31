@@ -17,18 +17,21 @@
 
 
 use TemplateFlix/PrettyLib.{Doc};
-use TemplateFlix/PrettyLib.{text, int32, ppName, parens, commaSep, commaSpaceSep, squotes, dquotes, 
+use TemplateFlix/PrettyLib.{text, int8, int16, int32, int64,
+    ppName, parens, commaSep, commaSpaceSep, squotes, dquotes, 
     braces, brackets, equals, colon, pipe, vsep};
 use TemplateFlix/PrettyLib.{<>, <<>>};
 
+use TemplateFlix/Syntax.{Attribute};
 use TemplateFlix/Syntax.{Case};
 use TemplateFlix/Syntax.{Declaration};
-use TemplateFlix/Syntax.Declaration.{Enum};
+use TemplateFlix/Syntax.Declaration.{EnumD, RelationD};
 use TemplateFlix/Syntax.{Expression};
 use TemplateFlix/Syntax.Expression.{SNameE, LitE, ApplyE, UnaryE, BinaryE, IfThenElseE, TupleE, RecordLitE, 
     ArrayLitE};
 use TemplateFlix/Syntax.{Literal};
-use TemplateFlix/Syntax.Literal.{UnitL, CharL, StringL, Int32L};
+use TemplateFlix/Syntax.Literal.{UnitL, NullL, TrueL, FalseL, CharL, StringL, 
+    Int8L, Int16L, Int32L, Int64L};
 use TemplateFlix/Syntax.{Pattern};
 use TemplateFlix/Syntax.Pattern.{LitP, VarP, TagP, TupleP};
 use TemplateFlix/Syntax.{RecordField};
@@ -41,20 +44,30 @@ namespace TemplateFlix/Pretty {
     def noPrec(): Int32 = 0
 
     pub def ppDeclaration(x: Declaration): Doc = match x { 
-        case Enum(v, _, cs)           => text("enum") <<>> ppName(v) <<>> braces(vsep(List.map(ppEnumCase, cs)))
+        case EnumD(v, _, cs)            => text("enum") <<>> ppName(v) <<>> braces(vsep(List.map(ppCase, cs)))
+        case RelationD(v, _, cs)        => text("rel") <<>> ppName(v) <<>> parens(commaSpaceSep(List.map(ppAttribute, cs)))
     }
 
-    pub def ppEnumCase(x: Case): Doc = match x.tpe { 
+    pub def ppCase(x: Case): Doc = match x.tpe { 
         case UnitT          => text("case") <<>> ppName(x.ident)
         case TupleT(_)      => text("case") <<>> ppName(x.ident) <> ppType(x.tpe)
         case _              => text("case") <<>> ppName(x.ident) <> parens(ppType(x.tpe))
     }
 
+    pub def ppAttribute(x: Attribute): Doc = ppName(x.ident) <> colon() <<>> ppType(x.tpe)
+        
+
     pub def ppLiteral(_prec: Int32, x: Literal): Doc = match x { 
         case UnitL              => text("()")
+        case TrueL              => text("true")
+        case NullL              => text("null")
+        case FalseL             => text("false")
         case CharL(c)           => squotes(text(Char.toString(c)))
         case StringL(s)         => dquotes(ppString(s))
+        case Int8L(d)           => int8(d) <> text("i8")
+        case Int16L(d)          => int16(d) <> text("i16")
         case Int32L(d)          => int32(d)
+        case Int64L(d)          => int64(d) <> text("i64")
     }
 
     pub def ppPattern(prec: Int32, x: Pattern): Doc = match x { 

@@ -21,7 +21,8 @@ use TemplateFlix/Syntax.{Expression};
 use TemplateFlix/Syntax.Expression.{SNameE, LitE, ApplyE,  UnaryE, BinaryE, 
     IfThenElseE, TupleE};
 use TemplateFlix/Syntax.{Literal};
-use TemplateFlix/Syntax.Literal.{UnitL, CharL, StringL, Int32L};
+use TemplateFlix/Syntax.Literal.{UnitL, TrueL, FalseL, CharL, StringL, 
+    Int8L, Int16L, Int32L, Int64L};
 use TemplateFlix/Syntax.{Name};
 use TemplateFlix/Syntax.Name.{Name};
 use TemplateFlix/Syntax.{Pattern};
@@ -33,9 +34,15 @@ namespace TemplateFlix/Lib {
     type alias PatternQ = QuoteM[Pattern]
 
     pub def unitL(): Literal = UnitL
+    pub def trueL(): Literal = TrueL
+    pub def falseL(): Literal = FalseL
     pub def charL(x: Char): Literal = CharL(x)
     pub def stringL(x: String): Literal = StringL(x)
+    
+    pub def int8L(x: Int8): Literal = Int8L(x)
+    pub def int16L(x: Int16): Literal = Int16L(x)
     pub def int32L(x: Int32): Literal = Int32L(x)
+    pub def int64L(x: Int64): Literal = Int64L(x)
 
     pub def litP(x: Literal): PatternQ = return(LitP(x))
 

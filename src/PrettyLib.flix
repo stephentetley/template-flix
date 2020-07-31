@@ -129,7 +129,13 @@ namespace TemplateFlix/PrettyLib {
 
     pub def text(x: String): Doc = return(Text/PrettyPrint.text(x))
 
+    pub def int8(x: Int8): Doc = return(Text/PrettyPrint.int8(x))
+
+    pub def int16(x: Int16): Doc = return(Text/PrettyPrint.int16(x))
+
     pub def int32(x: Int32): Doc = return(Text/PrettyPrint.int32(x))
+
+    pub def int64(x: Int64): Doc = return(Text/PrettyPrint.int64(x))
 
     pub def parens(d: Doc): Doc = map(Text/PrettyPrint.parens, d)
 
