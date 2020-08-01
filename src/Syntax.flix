@@ -44,7 +44,11 @@ namespace TemplateFlix/Syntax {
         case VarP(Name)
         case TagP(Name, Option[Pattern])
         case TupleP(List[Pattern])
-
+        case ArrayP(List[Pattern])
+        case ArrayTailSpreadP(List[Pattern], Name)
+        case ArrayHeadSpreadP(Name, List[Pattern])
+        case FNilP
+        case FConsP(Pattern, Pattern)
     }
 
     pub enum Expression { 

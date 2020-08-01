@@ -15,7 +15,7 @@
  */
 
 use TemplateFlix/QuoteMonad.{QuoteM};
-use TemplateFlix/QuoteMonad.{return, sequence};
+use TemplateFlix/QuoteMonad.{flatMap, return, sequence, option};
 
 use TemplateFlix/Syntax.{Expression};
 use TemplateFlix/Syntax.Expression.{SNameE, LitE, ApplyE,  UnaryE, BinaryE, 
@@ -26,13 +26,15 @@ use TemplateFlix/Syntax.Literal.{UnitL, TrueL, FalseL, CharL, StringL,
 use TemplateFlix/Syntax.{Name};
 use TemplateFlix/Syntax.Name.{Name};
 use TemplateFlix/Syntax.{Pattern};
-use TemplateFlix/Syntax.Pattern.{LitP, VarP};
+use TemplateFlix/Syntax.Pattern.{LitP, VarP, TagP, TupleP, ArrayP, 
+    ArrayTailSpreadP, ArrayHeadSpreadP};
 
 namespace TemplateFlix/Lib {
 
     type alias ExpressionQ = QuoteM[Expression]
     type alias PatternQ = QuoteM[Pattern]
 
+    /// Literall
     pub def unitL(): Literal = UnitL
     pub def trueL(): Literal = TrueL
     pub def falseL(): Literal = FalseL
@@ -44,22 +46,41 @@ namespace TemplateFlix/Lib {
     pub def int32L(x: Int32): Literal = Int32L(x)
     pub def int64L(x: Int64): Literal = Int64L(x)
 
+
+    /// Pattern
     pub def litP(x: Literal): PatternQ = return(LitP(x))
 
-    pub def varP(x: Name): PatternQ = return(VarP(x))
+    pub def varP(ident: Name): PatternQ = return(VarP(ident))
 
+    pub def tagP(ident: Name, pat: Option[PatternQ]): PatternQ = 
+        let* p1 = option(pat);
+        return(TagP(ident, p1))
+
+    pub def tupleP(xs: List[PatternQ]): PatternQ = 
+        let* xs1 = sequence(xs);
+        return(TupleP(xs1))
+
+    pub def arrayP(xs: List[PatternQ]): PatternQ = 
+        let* xs1 = sequence(xs);
+        return(ArrayP(xs1))
+
+    pub def arrayTailSpreadP(xs: List[PatternQ], ident: Name): PatternQ = 
+        let* xs1 = sequence(xs);
+        return(ArrayTailSpreadP(xs1, ident))
+
+    pub def arrayHeadSpreadP(ident: Name, xs: List[PatternQ]): PatternQ = 
+        let* xs1 = sequence(xs);
+        return(ArrayHeadSpreadP(ident, xs1))
 
     pub def litE(x: Literal): ExpressionQ = return(LitE(x))
 
     pub def applyE(x: ExpressionQ, xs: List[ExpressionQ]): ExpressionQ = 
-        use TemplateFlix/QuoteMonad.flatMap;
         let* e = x;
         let* es = sequence(xs);
         return(ApplyE(e, es))
 
 
     pub def tupleE(xs: List[ExpressionQ]): ExpressionQ = 
-        use TemplateFlix/QuoteMonad.flatMap;
         let* es = sequence(xs);
         return(TupleE(es))
 }

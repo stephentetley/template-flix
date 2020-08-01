@@ -65,6 +65,12 @@ namespace TemplateFlix/QuoteMonad {
         case mx :: rs   => sequenceHelper(rs, ys -> bind(mx, x-> k(x :: ys)))    
     }
 
+    pub def option(x: Option[QuoteM[a]]): QuoteM[Option[a]] = match x { 
+        case None => return(None)
+        case Some(mx) => map(Some, mx)
+    }
+        
+
     pub def newName(x: String): QuoteM[Name] = return(Name(x))
 
     // reify?

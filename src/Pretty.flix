@@ -33,7 +33,8 @@ use TemplateFlix/Syntax.{Literal};
 use TemplateFlix/Syntax.Literal.{UnitL, NullL, TrueL, FalseL, CharL, StringL, 
     Int8L, Int16L, Int32L, Int64L};
 use TemplateFlix/Syntax.{Pattern};
-use TemplateFlix/Syntax.Pattern.{LitP, VarP, TagP, TupleP};
+use TemplateFlix/Syntax.Pattern.{LitP, VarP, TagP, TupleP, ArrayP, 
+    ArrayTailSpreadP, ArrayHeadSpreadP, FNilP, FConsP};
 use TemplateFlix/Syntax.{RecordField};
 use TemplateFlix/Syntax.{RecordFieldType};
 use TemplateFlix/Syntax.{Type};
@@ -71,11 +72,22 @@ namespace TemplateFlix/Pretty {
     }
 
     pub def ppPattern(prec: Int32, x: Pattern): Doc = match x { 
-        case LitP(l)            => ppLiteral(prec, l)
-        case VarP(v)            => ppName(v)
-        case TagP(n, None)      => ppName(n)
-        case TagP(n, Some(p))   => ppName(n) <> ppPattern(prec, p)
-        case TupleP(ps)         => parens(commaSep(List.map(ppPattern(noPrec()), ps)))        
+        case LitP(l)                    => ppLiteral(prec, l)
+        case VarP(v)                    => ppName(v)
+        case TagP(n, None)              => ppName(n)
+        case TagP(n, Some(p))           => ppName(n) <> ppPattern(prec, p)
+        case TupleP(ps)                 => parens(commaSep(List.map(ppPattern(noPrec()), ps)))
+        case ArrayP(ps)                 => brackets(commaSep(List.map(ppPattern(noPrec()), ps)))
+        case ArrayTailSpreadP(ps, n)    => 
+            let tl = (text("..") <> ppName(n)) :: Nil;
+            commaSep(List.map(ppPattern(noPrec()), ps) ::: tl)
+        
+        case ArrayHeadSpreadP(n, ps)    => 
+            let hd = ppName(n) <> text("..");
+            commaSep(hd :: List.map(ppPattern(noPrec()), ps))
+        
+        case FNilP                      => text("Nil")
+        case FConsP(hd,tl)              => ppPattern(prec, hd) <<>> text("::") <<>> ppPattern(prec, tl)
     }
 
     pub def ppExpression(prec: Int32, x: Expression): Doc = match x { 
