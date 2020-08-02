@@ -128,6 +128,7 @@ namespace TemplateFlix/PrettyLib {
 
 
     pub def text(x: String): Doc = return(Text/PrettyPrint.text(x))
+    pub def char(x: Char): Doc = return(Text/PrettyPrint.char(x))
 
     pub def int8(x: Int8): Doc = return(Text/PrettyPrint.int8(x))
 
@@ -146,6 +147,10 @@ namespace TemplateFlix/PrettyLib {
     pub def squotes(d: Doc): Doc = map(Text/PrettyPrint.squotes, d)
 
     pub def dquotes(d: Doc): Doc = map(Text/PrettyPrint.dquotes, d)
+
+    /// Always separate with commaSpace
+    pub def tupled(docs: List[Doc]): Doc = 
+        parens(commaSpaceSep(docs))
 
     pub def hcat(docs: List[Doc]): Doc = 
         let* ds1 = sequence(docs);

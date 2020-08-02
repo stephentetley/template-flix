@@ -17,9 +17,9 @@
 
 
 use TemplateFlix/PrettyLib.{Doc};
-use TemplateFlix/PrettyLib.{text, int8, int16, int32, int64,
+use TemplateFlix/PrettyLib.{char, text, int8, int16, int32, int64,
     ppName, parens, commaSep, commaSpaceSep, squotes, dquotes, 
-    braces, brackets, equals, colon, pipe, vsep};
+    braces, brackets, tupled, equals, colon, pipe, vsep};
 use TemplateFlix/PrettyLib.{<>, <<>>};
 
 use TemplateFlix/Syntax.{Attribute};
@@ -27,8 +27,11 @@ use TemplateFlix/Syntax.{Case};
 use TemplateFlix/Syntax.{Declaration};
 use TemplateFlix/Syntax.Declaration.{EnumD, RelationD};
 use TemplateFlix/Syntax.{Expression};
-use TemplateFlix/Syntax.Expression.{SNameE, LitE, ApplyE, UnaryE, BinaryE, IfThenElseE, TupleE, RecordLitE, 
+use TemplateFlix/Syntax.Expression.{SNameE, LitE, HoleE, ApplyE, UnaryE, BinaryE, IfThenElseE, TupleE, RecordLitE, 
     ArrayLitE};
+use TemplateFlix/Syntax.{JvmOp};
+use TemplateFlix/Syntax.JvmOp.{ConstructorJ, MethodJ, StaticMethodJ, GetFieldJ, PutFieldJ, 
+    GetStaticFieldJ, PutStaticFieldJ};
 use TemplateFlix/Syntax.{Literal};
 use TemplateFlix/Syntax.Literal.{UnitL, NullL, TrueL, FalseL, CharL, StringL, 
     Int8L, Int16L, Int32L, Int64L};
@@ -37,12 +40,15 @@ use TemplateFlix/Syntax.Pattern.{LitP, VarP, TagP, TupleP, ArrayP,
     ArrayTailSpreadP, ArrayHeadSpreadP, FNilP, FConsP};
 use TemplateFlix/Syntax.{RecordField};
 use TemplateFlix/Syntax.{RecordFieldType};
+use TemplateFlix/Syntax.{RecordOp};
+use TemplateFlix/Syntax.RecordOp.{ExtendR, RestrictR};
 use TemplateFlix/Syntax.{Type};
 use TemplateFlix/Syntax.Type.{UnitT, VarT, TupleT, RecordT};
 
 namespace TemplateFlix/Pretty {
 
     def noPrec(): Int32 = 0
+    def maxPrec(): Int32 = 10       // ???
 
     pub def ppDeclaration(x: Declaration): Doc = match x { 
         case EnumD(v, _, cs)            => text("enum") <<>> ppName(v) <<>> braces(vsep(List.map(ppCase, cs)))
@@ -93,6 +99,8 @@ namespace TemplateFlix/Pretty {
     pub def ppExpression(prec: Int32, x: Expression): Doc = match x { 
         case SNameE(s)                  => ppName(s)
         case LitE(l)                    => ppLiteral(prec, l)
+        case HoleE(None)                => char('?')
+        case HoleE(Some(n))             => char('?') <> ppName(n)
         case ApplyE(e1, es)             => ppExpression(prec, e1) <> parens(commaSpaceSep(List.map(ppExpression(prec), es)))
         case UnaryE(op, e)              => text(op) <> ppExpression(prec, e)
         case BinaryE(e1, op, e2)        => ppExpression(prec, e1) <> text(op) <> ppExpression(prec, e2)
@@ -108,7 +116,7 @@ namespace TemplateFlix/Pretty {
     pub def ppType(x: Type): Doc = match x {
         case UnitT                      => text("Unit")
         case VarT(v)                    => ppName(v)
-        case TupleT(ts)                 => parens(commaSpaceSep(List.map(ppType, ts)))
+        case TupleT(ts)                 => tupled(List.map(ppType, ts))
         case RecordT(ts, Some(v))       => braces(commaSpaceSep(List.map(ppRecordFieldType, ts)) <> pipe() <> ppName(v))
         case RecordT(ts, None)          => braces(commaSpaceSep(List.map(ppRecordFieldType, ts)))
         
@@ -118,5 +126,49 @@ namespace TemplateFlix/Pretty {
         ppName(x.label) <> colon() <<>> ppType(x.tpe)
 
 
-    pub def ppString(x: String): Doc = text(x)
+    def ppString(x: String): Doc = text(x)
+
+    /// TODO - handle name differences betwen static and non-static
+    pub def ppJvmOp(x: JvmOp): Doc = match x { 
+        case ConstructorJ(name, ts, fname)          => 
+            text("import") <<>> text("new") <<>> ppName(name) <> tupled(List.map(ppType, ts)) 
+                <<>> text("as") <<>> ppName(fname)
+
+        case MethodJ(name, ts, None)                => 
+            text("import") <<>> ppName(name) <> tupled(List.map(ppType, ts)) 
+        
+        case MethodJ(name, ts, Some(fname))         => 
+            text("import") <<>> ppName(name) <> tupled(List.map(ppType, ts)) 
+                <<>> text("as") <<>> ppName(fname)
+
+        case StaticMethodJ(name, ts, None)          => 
+            text("import") <<>> text("static") <<>> ppName(name) <> tupled(List.map(ppType, ts)) 
+        
+        case StaticMethodJ(name, ts, Some(fname))   => 
+            text("import") <<>> text("static") <<>> ppName(name) <> tupled(List.map(ppType, ts)) 
+                <<>> text("as") <<>> ppName(fname)
+
+        case GetFieldJ(name, fname)                 => 
+            text("import") <<>> text("get") <<>> ppName(name) <<>> text("as") <<>> ppName(fname)
+
+        case PutFieldJ(name, fname)                 => 
+            text("import") <<>> text("set") <<>> ppName(name) <<>> text("as") <<>> ppName(fname)
+
+        case GetStaticFieldJ(name, fname)           => 
+            text("import") <<>> text("get") <<>> ppName(name) <<>> text("as") <<>> ppName(fname)
+
+        case PutStaticFieldJ(name, fname)           => 
+            text("import") <<>> text("set") <<>> ppName(name) <<>> text("as") <<>> ppName(fname)
+    }
+
+    pub def ppRecordOp(x: RecordOp): Doc = match x { 
+        case ExtendR(name, e)                   => 
+            char('+') <> ppName(name) <<>> equals() <<>> ppExpression(maxPrec(), e)
+
+        case RestrictR(name)                    => char('-') <> ppName(name)
+
+        case UpdateR(name, e)                   => 
+            ppName(name) <<>> equals() <<>> ppExpression(maxPrec(), e)
+    }
+
 }

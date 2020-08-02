@@ -39,6 +39,19 @@ namespace TemplateFlix/Syntax {
         case Int64L(Int64)
     }
 
+    pub enum Expression { 
+        case SNameE(Name)
+        case LitE(Literal)                                          // { 1 } or { "hello"} etc.
+        case HoleE(Option[Name])
+        case ApplyE(Expression, List[Expression])                   // { max(1, 2) }
+        case UnaryE(String, Expression)                             // { !true }
+        case BinaryE(Expression, String, Expression)
+        case IfThenElseE(Expression, Expression, Expression)        // { if (e1) e2 else e3 }
+        case TupleE(List[Expression])
+        case RecordLitE(List[RecordField])
+        case ArrayLitE(List[Expression])
+    }
+
     pub enum Pattern { 
         case LitP(Literal)
         case VarP(Name)
@@ -49,18 +62,6 @@ namespace TemplateFlix/Syntax {
         case ArrayHeadSpreadP(Name, List[Pattern])
         case FNilP
         case FConsP(Pattern, Pattern)
-    }
-
-    pub enum Expression { 
-        case SNameE(Name)
-        case LitE(Literal)                                          // { 1 } or { "hello"} etc.
-        case ApplyE(Expression, List[Expression])                   // { max(1, 2) }
-        case UnaryE(String, Expression)                             // { !true }
-        case BinaryE(Expression, String, Expression)
-        case IfThenElseE(Expression, Expression, Expression)        // { if (e1) e2 else e3 }
-        case TupleE(List[Expression])
-        case RecordLitE(List[RecordField])
-        case ArrayLitE(List[Expression])
     }
 
     type alias Case = { ident: Name, tpe: Type }
@@ -84,5 +85,21 @@ namespace TemplateFlix/Syntax {
     type alias RecordFieldType = { label: Name, tpe: Type }
 
     type alias ContextBound = { ident: Name, tparams: List[Type] }
+
+    pub enum JvmOp { 
+        case ConstructorJ(Name, List[Type], Name)
+        case MethodJ(Name, List[Type], Option[Name])
+        case StaticMethodJ(Name, List[Type], Option[Name])
+        case GetFieldJ(Name, Name)
+        case PutFieldJ(Name, Name)
+        case GetStaticFieldJ(Name, Name)
+        case PutStaticFieldJ(Name, Name)
+    }
+
+    pub enum RecordOp { 
+        case ExtendR(Name, Expression)
+        case RestrictR(Name)
+        case UpdateR(Name, Expression)
+    }
 
 }
