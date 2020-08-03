@@ -49,7 +49,14 @@ namespace TemplateFlix/Syntax {
         case IfThenElseE(Expression, Expression, Expression)        // { if (e1) e2 else e3 }
         case TupleE(List[Expression])
         case RecordLitE(List[RecordField])
+        case RecordSelectE(Expression, Name)
+        /// RecordSelectLambda ?
+        case RecordOperationE(List[RecordOp], Expression)
         case ArrayLitE(List[Expression])
+        case ArrayNewE(Expression, Expression)
+        case ArrayLoadE(Expression, Expression)
+        case ArrayStoreE(Expression, List[Expression], Expression)
+        case ArraySliceE(Expression, Option[Expression], Option[Expression])
     }
 
     pub enum Pattern { 
@@ -100,6 +107,12 @@ namespace TemplateFlix/Syntax {
         case ExtendR(Name, Expression)
         case RestrictR(Name)
         case UpdateR(Name, Expression)
+    }
+
+    pub enum PredicateType { 
+        case PredicateWithAliasT(Name, Option[List[Type]])
+        case RelPredicateWithTypesT(Name, Option[List[Type]])
+        case LatPredicateWithTypesT(Name, Option[List[Type]])
     }
 
 }

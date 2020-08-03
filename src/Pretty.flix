@@ -19,7 +19,7 @@
 use TemplateFlix/PrettyLib.{Doc};
 use TemplateFlix/PrettyLib.{char, text, int8, int16, int32, int64,
     ppName, parens, commaSep, commaSpaceSep, squotes, dquotes, 
-    braces, brackets, tupled, equals, colon, pipe, vsep};
+    braces, brackets, tupled, equals, colon, pipe, vsep, hcat, dot, semi};
 use TemplateFlix/PrettyLib.{<>, <<>>};
 
 use TemplateFlix/Syntax.{Attribute};
@@ -27,8 +27,9 @@ use TemplateFlix/Syntax.{Case};
 use TemplateFlix/Syntax.{Declaration};
 use TemplateFlix/Syntax.Declaration.{EnumD, RelationD};
 use TemplateFlix/Syntax.{Expression};
-use TemplateFlix/Syntax.Expression.{SNameE, LitE, HoleE, ApplyE, UnaryE, BinaryE, IfThenElseE, TupleE, RecordLitE, 
-    ArrayLitE};
+use TemplateFlix/Syntax.Expression.{SNameE, LitE, HoleE, ApplyE, UnaryE, BinaryE, IfThenElseE, TupleE, 
+    RecordLitE, RecordSelectE, RecordOperationE,
+    ArrayLitE, ArrayNewE, ArrayLoadE, ArrayStoreE, ArraySliceE};
 use TemplateFlix/Syntax.{JvmOp};
 use TemplateFlix/Syntax.JvmOp.{ConstructorJ, MethodJ, StaticMethodJ, GetFieldJ, PutFieldJ, 
     GetStaticFieldJ, PutStaticFieldJ};
@@ -41,7 +42,7 @@ use TemplateFlix/Syntax.Pattern.{LitP, VarP, TagP, TupleP, ArrayP,
 use TemplateFlix/Syntax.{RecordField};
 use TemplateFlix/Syntax.{RecordFieldType};
 use TemplateFlix/Syntax.{RecordOp};
-use TemplateFlix/Syntax.RecordOp.{ExtendR, RestrictR};
+use TemplateFlix/Syntax.RecordOp.{ExtendR, RestrictR, UpdateR};
 use TemplateFlix/Syntax.{Type};
 use TemplateFlix/Syntax.Type.{UnitT, VarT, TupleT, RecordT};
 
@@ -97,17 +98,49 @@ namespace TemplateFlix/Pretty {
     }
 
     pub def ppExpression(prec: Int32, x: Expression): Doc = match x { 
-        case SNameE(s)                  => ppName(s)
-        case LitE(l)                    => ppLiteral(prec, l)
-        case HoleE(None)                => char('?')
-        case HoleE(Some(n))             => char('?') <> ppName(n)
-        case ApplyE(e1, es)             => ppExpression(prec, e1) <> parens(commaSpaceSep(List.map(ppExpression(prec), es)))
-        case UnaryE(op, e)              => text(op) <> ppExpression(prec, e)
-        case BinaryE(e1, op, e2)        => ppExpression(prec, e1) <> text(op) <> ppExpression(prec, e2)
-        case IfThenElseE(e1, e2, e3)    => text("if") <<>> parens(ppExpression(prec, e1)) <<>> ppExpression(prec, e2) <<>> text("else") <<>> ppExpression(prec, e3)
-        case TupleE(es)                 => parens(commaSpaceSep(List.map(ppExpression(prec), es)))
-        case RecordLitE(xs)             => braces(commaSpaceSep(List.map(ppRecordField(prec), xs)))
-        case ArrayLitE(es)              => brackets(commaSpaceSep(List.map(ppExpression(prec), es)))
+        case SNameE(s)                          => ppName(s)
+        case LitE(l)                            => ppLiteral(prec, l)
+        case HoleE(None)                        => char('?')
+        case HoleE(Some(n))                     => char('?') <> ppName(n)
+        case ApplyE(e1, es)                     => 
+            ppExpression(prec, e1) <> parens(commaSpaceSep(List.map(ppExpression(prec), es)))
+
+        case UnaryE(op, e)                      => text(op) <> ppExpression(prec, e)
+        case BinaryE(e1, op, e2)                => ppExpression(prec, e1) <> text(op) <> ppExpression(prec, e2)
+        case IfThenElseE(e1, e2, e3)            => 
+            text("if") <<>> parens(ppExpression(prec, e1)) <<>> ppExpression(prec, e2) <<>> text("else") <<>> ppExpression(prec, e3)
+
+        case TupleE(es)                         => parens(commaSpaceSep(List.map(ppExpression(prec), es)))
+        case RecordLitE(xs)                     => braces(commaSpaceSep(List.map(ppRecordField(prec), xs)))
+        case RecordSelectE(e, n)                => ppExpression(prec, e) <> dot() <> ppName(n)
+        case RecordOperationE(ops, e)   => 
+            braces(commaSpaceSep(List.map(ppRecordOp, ops)) <<>> pipe() <<>> ppExpression(prec, e))
+
+        case ArrayLitE(es)                      => brackets(commaSpaceSep(List.map(ppExpression(prec), es)))
+        case ArrayNewE(e1, e2)                  => 
+            brackets(ppExpression(prec, e1) <> semi() <<>> ppExpression(prec, e2))
+
+        case ArrayLoadE(e1, e2)                 => 
+            ppExpression(prec, e1) <> brackets(ppExpression(prec, e2))
+
+        case ArrayStoreE(e1, es, e2)            => {
+            let ixs = hcat(List.map(e -> brackets(ppExpression(maxPrec(), e)), es));
+            ppExpression(prec, e1) <> ixs <<>> equals() <<>> ppExpression(prec, e2)
+        }
+
+        case ArraySliceE(e1, None, None)        => 
+            ppExpression(prec, e1) <> brackets(text(".."))
+
+        case ArraySliceE(e1, None, Some(ee))    => 
+            ppExpression(prec, e1) <> brackets(text("..") <> ppExpression(maxPrec(), ee))
+        
+        case ArraySliceE(e1, Some(eb), None)    => 
+            ppExpression(prec, e1) <> brackets(ppExpression(maxPrec(), eb) <> text(".."))
+        
+        case ArraySliceE(e1, Some(eb), Some(ee))    => 
+            ppExpression(prec, e1) <> brackets(ppExpression(maxPrec(), eb) <> text("..") <> ppExpression(maxPrec(), ee))
+        
+
     }
 
     def ppRecordField(prec: Int32, x: RecordField): Doc = 

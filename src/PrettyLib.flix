@@ -110,6 +110,8 @@ namespace TemplateFlix/PrettyLib {
 
     pub def equals(): Doc = return(Text/PrettyPrint.equals())
 
+    pub def dot(): Doc = return(Text/PrettyPrint.dot())
+
     pub def arrow(): Doc = return(Text/PrettyPrint.text("->"))
 
     pub def pipe(): Doc = return(Text/PrettyPrint.text("|"))

@@ -19,7 +19,7 @@ use TemplateFlix/QuoteMonad.{flatMap, return, sequence, option};
 
 use TemplateFlix/Syntax.{Expression};
 use TemplateFlix/Syntax.Expression.{SNameE, LitE, ApplyE,  UnaryE, BinaryE, 
-    IfThenElseE, TupleE};
+    IfThenElseE, TupleE, RecordSelectE};
 use TemplateFlix/Syntax.{Literal};
 use TemplateFlix/Syntax.Literal.{UnitL, TrueL, FalseL, CharL, StringL, 
     Int8L, Int16L, Int32L, Int64L};
@@ -81,6 +81,10 @@ namespace TemplateFlix/Lib {
 
 
     pub def tupleE(xs: List[ExpressionQ]): ExpressionQ = 
-        let* es = sequence(xs);
-        return(TupleE(es))
+        let* xs1 = sequence(xs);
+        return(TupleE(xs1))
+
+    pub def recordSelectE(x: ExpressionQ, ident: Name): ExpressionQ = 
+        let* x1 = x;
+        return(RecordSelectE(x1, ident))
 }
