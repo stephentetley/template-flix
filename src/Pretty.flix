@@ -20,14 +20,14 @@ use TemplateFlix/PrettyLib.{Doc};
 use TemplateFlix/PrettyLib.{char, text, int8, int16, int32, int64,
     ppName, parens, commaSep, commaSpaceSep, squotes, dquotes, 
     braces, brackets, tupled, equals, colon, pipe, vsep, hcat, dot, semi};
-use TemplateFlix/PrettyLib.{<>, <<>>};
+use TemplateFlix/PrettyLib.{<>, <<>>, <!>};
 
 use TemplateFlix/Syntax.{Attribute};
 use TemplateFlix/Syntax.{Case};
 use TemplateFlix/Syntax.{Declaration};
 use TemplateFlix/Syntax.Declaration.{EnumD, RelationD};
 use TemplateFlix/Syntax.{Expression};
-use TemplateFlix/Syntax.Expression.{SNameE, LitE, HoleE, ApplyE, UnaryE, BinaryE, IfThenElseE, TupleE, 
+use TemplateFlix/Syntax.Expression.{SNameE, HoleE, UseE, LitE, ApplyE, UnaryE, BinaryE, IfThenElseE, TupleE, 
     RecordLitE, RecordSelectE, RecordOperationE,
     ArrayLitE, ArrayNewE, ArrayLoadE, ArrayStoreE, ArraySliceE};
 use TemplateFlix/Syntax.{JvmOp};
@@ -36,6 +36,7 @@ use TemplateFlix/Syntax.JvmOp.{ConstructorJ, MethodJ, StaticMethodJ, GetFieldJ, 
 use TemplateFlix/Syntax.{Literal};
 use TemplateFlix/Syntax.Literal.{UnitL, NullL, TrueL, FalseL, CharL, StringL, 
     Int8L, Int16L, Int32L, Int64L};
+use TemplateFlix/Syntax.{NameAndAlias};
 use TemplateFlix/Syntax.{Pattern};
 use TemplateFlix/Syntax.Pattern.{LitP, VarP, TagP, TupleP, ArrayP, 
     ArrayTailSpreadP, ArrayHeadSpreadP, FNilP, FConsP};
@@ -45,6 +46,8 @@ use TemplateFlix/Syntax.{RecordOp};
 use TemplateFlix/Syntax.RecordOp.{ExtendR, RestrictR, UpdateR};
 use TemplateFlix/Syntax.{Type};
 use TemplateFlix/Syntax.Type.{UnitT, VarT, TupleT, RecordT};
+use TemplateFlix/Syntax.{Use};
+use TemplateFlix/Syntax.Use.{UseOneU, UseManyU, UseOneTagU, UseManyTagU};
 
 namespace TemplateFlix/Pretty {
 
@@ -56,15 +59,33 @@ namespace TemplateFlix/Pretty {
         case RelationD(v, _, cs)        => text("rel") <<>> ppName(v) <<>> parens(commaSpaceSep(List.map(ppAttribute, cs)))
     }
 
+    pub def ppAttribute(x: Attribute): Doc = ppName(x.ident) <> colon() <<>> ppType(x.tpe)
+        
+
     pub def ppCase(x: Case): Doc = match x.tpe { 
         case UnitT          => text("case") <<>> ppName(x.ident)
         case TupleT(_)      => text("case") <<>> ppName(x.ident) <> ppType(x.tpe)
         case _              => text("case") <<>> ppName(x.ident) <> parens(ppType(x.tpe))
     }
 
-    pub def ppAttribute(x: Attribute): Doc = ppName(x.ident) <> colon() <<>> ppType(x.tpe)
+
+    pub def ppUse(x: Use): Doc = match x { 
+        case UseOneU(qname, n)          => text("use") <<>> ppName(qname) <> dot() <> ppName(n)
+        case UseManyU(qname, ns)        => 
+            text("use") <<>> ppName(qname) <> dot() <> braces(commaSpaceSep(List.map(ppNameAndAlias, ns)))
+
+        case UseOneTagU(qname, n)       => text("use") <<>> ppName(qname) <> dot() <> ppName(n)
+        case UseManyTagU(qname, ns)     => 
+            text("use") <<>> ppName(qname) <> dot() <> braces(commaSpaceSep(List.map(ppNameAndAlias, ns)))
+    }
+    
+    pub def ppNameAndAlias (x: NameAndAlias): Doc = match x.alias { 
+        case Some(n2)   => ppName(x.ident) <<>> text("=>") <<>> ppName(n2)
+        case None       => ppName(x.ident)
+    }
         
 
+    
     pub def ppLiteral(_prec: Int32, x: Literal): Doc = match x { 
         case UnitL              => text("()")
         case TrueL              => text("true")
@@ -99,8 +120,9 @@ namespace TemplateFlix/Pretty {
 
     pub def ppExpression(prec: Int32, x: Expression): Doc = match x { 
         case SNameE(s)                          => ppName(s)
-        case LitE(l)                            => ppLiteral(prec, l)
         case HoleE(None)                        => char('?')
+        case UseE(u, e1)                        => ppUse(u) <> semi() <!> ppExpression(maxPrec(), e1)
+        case LitE(l)                            => ppLiteral(prec, l)
         case HoleE(Some(n))                     => char('?') <> ppName(n)
         case ApplyE(e1, es)                     => 
             ppExpression(prec, e1) <> parens(commaSpaceSep(List.map(ppExpression(prec), es)))

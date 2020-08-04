@@ -18,6 +18,7 @@
 
 namespace TemplateFlix/Syntax {
 
+    // Name is a placeholder for Name, QName etc..
     pub opaque type Name = String
 
 
@@ -25,6 +26,15 @@ namespace TemplateFlix/Syntax {
         case EnumD(Name, TyParams, List[Case])
         case RelationD(Name, TyParams, List[Attribute])
     }
+
+    pub enum Use { 
+        case UseOneU(Name, Name)
+        case UseManyU(Name, List[NameAndAlias])
+        case UseOneTagU(Name, Name)
+        case UseManyTagU(Name, List[NameAndAlias])
+    }
+
+    type alias NameAndAlias = { ident: Name, alias: Option[Name] }
 
     pub enum Literal { 
         case UnitL
@@ -41,8 +51,9 @@ namespace TemplateFlix/Syntax {
 
     pub enum Expression { 
         case SNameE(Name)
-        case LitE(Literal)                                          // { 1 } or { "hello"} etc.
         case HoleE(Option[Name])
+        case UseE(Use, Expression)
+        case LitE(Literal)                                          // { 1 } or { "hello"} etc.
         case ApplyE(Expression, List[Expression])                   // { max(1, 2) }
         case UnaryE(String, Expression)                             // { !true }
         case BinaryE(Expression, String, Expression)

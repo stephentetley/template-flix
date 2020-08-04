@@ -183,6 +183,9 @@ namespace TemplateFlix/PrettyLib {
         use Text/PrettyPrint.{besideSpace};
         lift2(besideSpace, d1, d2)
 
+    pub def <!>(d1: Doc, d2: Doc): Doc = 
+        use Text/PrettyPrint.{besideSoftline};
+        lift2(besideSoftline, d1, d2)
 
     /// TODO - Haskell is tracking fresh names here?
     pub def ppName(x: Name): Doc = 
