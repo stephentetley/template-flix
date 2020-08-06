@@ -19,7 +19,7 @@
 use TemplateFlix/PrettyLib.{Doc};
 use TemplateFlix/PrettyLib.{empty, char, text, int8, int16, int32, int64,
     ppName, parens, commaSep, commaSpaceSep, squotes, dquotes, 
-    braces, brackets, tupled, equals, ampersand, colon, pipe, vsep, hcat, dot, semi};
+    braces, brackets, tupled, equals, ampersand, colon, pipe, vsep, hcat, hsep, dot, semi};
 use TemplateFlix/PrettyLib.{<>, <<>>, <!>};
 
 use TemplateFlix/Syntax.{Attribute};
@@ -31,12 +31,15 @@ use TemplateFlix/Syntax.{Expression};
 use TemplateFlix/Syntax.Expression.{SNameE, HoleE, UseE, LitE, ApplyE, UnaryE, BinaryE, IfThenElseE, TupleE, 
     RecordLitE, RecordSelectE, RecordOperationE,
     ArrayLitE, ArrayNewE, ArrayLoadE, ArrayStoreE, ArraySliceE};
+use TemplateFlix/Syntax.{FormalParam};    
 use TemplateFlix/Syntax.{JvmOp};
 use TemplateFlix/Syntax.JvmOp.{ConstructorJ, MethodJ, StaticMethodJ, GetFieldJ, PutFieldJ, 
     GetStaticFieldJ, PutStaticFieldJ};
 use TemplateFlix/Syntax.{Literal};
 use TemplateFlix/Syntax.Literal.{UnitL, NullL, TrueL, FalseL, CharL, StringL, 
     Int8L, Int16L, Int32L, Int64L};
+use TemplateFlix/Syntax.{Modifier};
+use TemplateFlix/Syntax.Modifier.{Modifier};
 use TemplateFlix/Syntax.{NameAndAlias};
 use TemplateFlix/Syntax.{Pattern};
 use TemplateFlix/Syntax.Pattern.{LitP, VarP, TagP, TupleP, ArrayP, 
@@ -58,11 +61,15 @@ namespace TemplateFlix/Pretty {
     def maxPrec(): Int32 = 10       // ???
 
     pub def ppDeclaration(x: Declaration): Doc = match x { 
-        case DefD(n, typams, _formals, ty, ety, e1)        =>
-            text("def") <<>> ppName(n) <> ppTyParams(typams) <> colon() <<>> ppType(ty) <<>> ppoEffect(ety) <<>> ppExpression(maxPrec(), e1)
+        case DefD(n, typams, formals, ty, ety, e1)        =>
+            text("def") <<>> ppName(n) <> ppTyParams(typams) <> pplFormalParam(formals)
+                <> colon() <<>> ppType(ty) <<>> ppoEffect(ety) <<>> ppExpression(maxPrec(), e1)
 
-        case EnumD(v, _, cs)            => text("enum") <<>> ppName(v) <<>> braces(vsep(List.map(ppCase, cs)))
-        case RelationD(v, _, cs)        => text("rel") <<>> ppName(v) <<>> parens(commaSpaceSep(List.map(ppAttribute, cs)))
+        case EnumD(v, typams, cs)            => 
+            text("enum") <<>> ppName(v) <<>> ppTyParams(typams) <> braces(vsep(List.map(ppCase, cs)))
+        
+        case RelationD(v, typams, cs)        => 
+            text("rel") <<>> ppName(v) <<>> ppTyParams(typams) <> parens(commaSpaceSep(List.map(ppAttribute, cs)))
     }
 
     def ppoEffect(x: Option[Type]): Doc = match x { 
@@ -205,7 +212,21 @@ namespace TemplateFlix/Pretty {
         case xs         => ppName(x.ident) <> colon() <<>> tupled(List.map(ppType, xs))     // Expected to be wrong...
     }
 
-    //type alias FormalParam = { mod: List[Modifier], ident: Name, tpe: Option[Type] }
+
+    def pplFormalParam(xs: List[FormalParam]): Doc = 
+        parens(commaSpaceSep(List.map(ppFormalParam, xs)))
+
+    def ppFormalParam(x: FormalParam): Doc = match x.tpe {
+        case Some(ty)   => pplModifier(x.modifiers) <<>> ppName(x.ident) <> colon() <<>> ppType(ty)
+        case None       => pplModifier(x.modifiers) <<>> ppName(x.ident)
+    }
+        
+
+    pub def pplModifier(xs: List[Modifier]): Doc = hsep(List.map(ppModifier, xs))
+
+    pub def ppModifier(x: Modifier): Doc = 
+        let Modifier(x1) = x;
+        text(x1)
 
     def ppString(x: String): Doc = text(x)
 

@@ -99,7 +99,7 @@ namespace TemplateFlix/PrettyLib {
     pub def empty(): Doc = return(Text/PrettyPrint.empty())
 
     pub def ampersand(): Doc = return(Text/PrettyPrint.char('&'))
-    
+
     pub def semi(): Doc = return(Text/PrettyPrint.semi())
 
     pub def comma(): Doc = return(Text/PrettyPrint.comma())
@@ -159,6 +159,10 @@ namespace TemplateFlix/PrettyLib {
     pub def hcat(docs: List[Doc]): Doc = 
         let* ds1 = sequence(docs);
         return(Text/PrettyPrint.hcat(ds1))
+
+    pub def hsep(docs: List[Doc]): Doc = 
+        let* ds1 = sequence(docs);
+        return(Text/PrettyPrint.hsep(ds1))
 
     pub def vsep(docs: List[Doc]): Doc = 
         let* ds1 = sequence(docs);

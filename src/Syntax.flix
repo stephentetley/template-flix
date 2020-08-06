@@ -105,9 +105,10 @@ namespace TemplateFlix/Syntax {
 
     type alias ContextBound = { ident: Name, tparams: List[Type] }
 
-    type alias FormalParam = { mod: List[Modifier], ident: Name, tpe: Option[Type] }
+    type alias FormalParam = { modifiers: List[Modifier], ident: Name, tpe: Option[Type] }
 
-    type alias Modifier = String
+    // "inline" or "pub"
+    pub opaque type Modifier = String
 
     pub enum JvmOp { 
         case ConstructorJ(Name, List[Type], Name)
