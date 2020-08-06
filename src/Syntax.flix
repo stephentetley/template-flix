@@ -21,8 +21,9 @@ namespace TemplateFlix/Syntax {
     // Name is a placeholder for Name, QName etc..
     pub opaque type Name = String
 
-
+    /// Constructors have missing fields at the moment
     pub enum Declaration {
+        case DefD(Name, TyParams, List[FormalParam], Type, Option[Type], Expression)
         case EnumD(Name, TyParams, List[Case])
         case RelationD(Name, TyParams, List[Attribute])
     }
@@ -94,8 +95,8 @@ namespace TemplateFlix/Syntax {
     }
 
     pub enum TyParams {
-        case Elided()
-        case Explicit(List[ContextBound])
+        case ElidedTp
+        case ExplicitTp(List[ContextBound])
     }
 
     type alias RecordField = { label: Name, value: Expression }
@@ -103,6 +104,10 @@ namespace TemplateFlix/Syntax {
     type alias RecordFieldType = { label: Name, tpe: Type }
 
     type alias ContextBound = { ident: Name, tparams: List[Type] }
+
+    type alias FormalParam = { mod: List[Modifier], ident: Name, tpe: Option[Type] }
+
+    type alias Modifier = String
 
     pub enum JvmOp { 
         case ConstructorJ(Name, List[Type], Name)

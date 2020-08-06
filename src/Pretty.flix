@@ -17,15 +17,16 @@
 
 
 use TemplateFlix/PrettyLib.{Doc};
-use TemplateFlix/PrettyLib.{char, text, int8, int16, int32, int64,
+use TemplateFlix/PrettyLib.{empty, char, text, int8, int16, int32, int64,
     ppName, parens, commaSep, commaSpaceSep, squotes, dquotes, 
-    braces, brackets, tupled, equals, colon, pipe, vsep, hcat, dot, semi};
+    braces, brackets, tupled, equals, ampersand, colon, pipe, vsep, hcat, dot, semi};
 use TemplateFlix/PrettyLib.{<>, <<>>, <!>};
 
 use TemplateFlix/Syntax.{Attribute};
 use TemplateFlix/Syntax.{Case};
+use TemplateFlix/Syntax.{ContextBound};
 use TemplateFlix/Syntax.{Declaration};
-use TemplateFlix/Syntax.Declaration.{EnumD, RelationD};
+use TemplateFlix/Syntax.Declaration.{DefD, EnumD, RelationD};
 use TemplateFlix/Syntax.{Expression};
 use TemplateFlix/Syntax.Expression.{SNameE, HoleE, UseE, LitE, ApplyE, UnaryE, BinaryE, IfThenElseE, TupleE, 
     RecordLitE, RecordSelectE, RecordOperationE,
@@ -44,6 +45,8 @@ use TemplateFlix/Syntax.{RecordField};
 use TemplateFlix/Syntax.{RecordFieldType};
 use TemplateFlix/Syntax.{RecordOp};
 use TemplateFlix/Syntax.RecordOp.{ExtendR, RestrictR, UpdateR};
+use TemplateFlix/Syntax.{TyParams};
+use TemplateFlix/Syntax.TyParams.{ElidedTp, ExplicitTp};
 use TemplateFlix/Syntax.{Type};
 use TemplateFlix/Syntax.Type.{UnitT, VarT, TupleT, RecordT};
 use TemplateFlix/Syntax.{Use};
@@ -55,9 +58,18 @@ namespace TemplateFlix/Pretty {
     def maxPrec(): Int32 = 10       // ???
 
     pub def ppDeclaration(x: Declaration): Doc = match x { 
+        case DefD(n, typams, _formals, ty, ety, e1)        =>
+            text("def") <<>> ppName(n) <> ppTyParams(typams) <> colon() <<>> ppType(ty) <<>> ppoEffect(ety) <<>> ppExpression(maxPrec(), e1)
+
         case EnumD(v, _, cs)            => text("enum") <<>> ppName(v) <<>> braces(vsep(List.map(ppCase, cs)))
         case RelationD(v, _, cs)        => text("rel") <<>> ppName(v) <<>> parens(commaSpaceSep(List.map(ppAttribute, cs)))
     }
+
+    def ppoEffect(x: Option[Type]): Doc = match x { 
+        case None       => empty()
+        case Some(ty)   => ampersand() <<>> ppType(ty)
+    }
+    
 
     pub def ppAttribute(x: Attribute): Doc = ppName(x.ident) <> colon() <<>> ppType(x.tpe)
         
@@ -176,10 +188,24 @@ namespace TemplateFlix/Pretty {
         case RecordT(ts, None)          => braces(commaSpaceSep(List.map(ppRecordFieldType, ts)))
         
     }
-        
+
+
+    pub def ppTyParams(x: TyParams): Doc = match x {
+        case ElidedTp           => empty()
+        case ExplicitTp(xs)     => brackets(commaSpaceSep(List.map(ppContextBound, xs)))
+    }
+
+
     def ppRecordFieldType(x: RecordFieldType): Doc = 
         ppName(x.label) <> colon() <<>> ppType(x.tpe)
 
+    def ppContextBound(x: ContextBound): Doc = match x.tparams { 
+        case Nil        => ppName(x.ident) 
+        case t1 :: Nil  => ppName(x.ident) <> colon() <<>> ppType(t1)
+        case xs         => ppName(x.ident) <> colon() <<>> tupled(List.map(ppType, xs))     // Expected to be wrong...
+    }
+
+    //type alias FormalParam = { mod: List[Modifier], ident: Name, tpe: Option[Type] }
 
     def ppString(x: String): Doc = text(x)
 

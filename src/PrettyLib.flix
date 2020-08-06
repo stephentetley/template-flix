@@ -98,6 +98,8 @@ namespace TemplateFlix/PrettyLib {
 
     pub def empty(): Doc = return(Text/PrettyPrint.empty())
 
+    pub def ampersand(): Doc = return(Text/PrettyPrint.char('&'))
+    
     pub def semi(): Doc = return(Text/PrettyPrint.semi())
 
     pub def comma(): Doc = return(Text/PrettyPrint.comma())
