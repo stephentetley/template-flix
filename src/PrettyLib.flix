@@ -152,6 +152,9 @@ namespace TemplateFlix/PrettyLib {
 
     pub def dquotes(d: Doc): Doc = map(Text/PrettyPrint.dquotes, d)
 
+
+    pub def hang(i: Int32, d: Doc): Doc = map(Text/PrettyPrint.hang(i), d)
+
     /// Always separate with commaSpace
     pub def tupled(docs: List[Doc]): Doc = 
         parens(commaSpaceSep(docs))

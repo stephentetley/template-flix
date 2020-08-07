@@ -23,9 +23,12 @@ namespace TemplateFlix/Syntax {
 
     /// Constructors have missing fields at the moment
     pub enum Declaration {
-        case DefD(Name, TyParams, List[FormalParam], Type, Option[Type], Expression)
-        case EnumD(Name, TyParams, List[Case])
-        case RelationD(Name, TyParams, List[Attribute])
+        case NamespaceD(Name, List[Declaration])
+        case DefD(List[Modifier], Name, TyParams, List[FormalParam], Type, Option[Type], Expression)
+        case EnumD(List[Modifier], Name, TyParams, List[Case])
+        case OpaqueTypeD(List[Modifier], Name, TyParams, Type)        
+        case TypeAliasD(List[Modifier], Name, TyParams, Type)
+        case RelationD(List[Modifier], Name, TyParams, List[Attribute])
     }
 
     pub enum Use { 
