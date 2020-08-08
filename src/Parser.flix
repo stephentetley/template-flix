@@ -15,7 +15,10 @@
  */
 
 use TextParser.TextParser;
-use TextParser.{return, map, alt, swapError, parseError, seqRight, seqLeft, tryparse, endOfInput, lookingAts, liftResult};
+use TextParser.TextParser1;
+use TextParser.{return, flatMap, map, alt, swapError, parseError, seqRight, seqLeft, 
+    tryparse, endOfInput, lookingAts, liftResult, evalLookingAts};
+use TextParser/Combinators.{<*, *>};
 use TextParser/Combinators.{tuple2, choice, many1Till, ignore};
 use TextParser/Text.{whiteSpace,  skip1OneOf, content, restOfLine, peekRestOfLine};
 use TextParser/Token1.{symbol, lexeme};
@@ -39,6 +42,8 @@ use TemplateFlix/Syntax.Literal.{UnitL, NullL, TrueL, FalseL, CharL, StringL,
     Int8L, Int16L, Int32L, Int64L};
 use TemplateFlix/Syntax.{Modifier};
 use TemplateFlix/Syntax.Modifier.{Modifier};
+use TemplateFlix/Syntax.{Name};
+use TemplateFlix/Syntax.Name.{Name};
 use TemplateFlix/Syntax.{NameAndAlias};
 use TemplateFlix/Syntax.{Pattern};
 use TemplateFlix/Syntax.Pattern.{LitP, VarP, TagP, TupleP, ArrayP, 
@@ -56,15 +61,68 @@ use TemplateFlix/Syntax.Use.{UseOneU, UseManyU, UseOneTagU, UseManyTagU};
 
 namespace TemplateFlix/Parser {
     
-    /// Add to TextParser
-    pub def *>(p1: TextParser[a, t], p2: TextParser[b, t]): TextParser[b, t] = seqRight(p1, p2)
-    
-    /// Add to TextParser
-    pub def <*(p1: TextParser[a, t], p2: TextParser[b, t]): TextParser[a, t] = seqLeft(p1, p2)
+    def <!>(p1: TextParser[a, t], p2: TextParser[a, t]): TextParser[a, t] = 
+        alt(p1, p2)
 
-    pub def modifierP(): TextParser[Modifier, t] = 
-        let inlineP = symbol("inline")  *> return(Modifier("inline"));
-        let pubP    = symbol("pub")     *> return(Modifier("pub"));
-        alt(pubP, inlineP)
-    
+    // Haskells <$>
+    def <&>(f: a -> b, p2: TextParser[a, t]): TextParser[b, t] = 
+        map(f, p2)
+
+
+    /// Note trueP is an illegal name in Flix
+
+    pub def parses(p: TextParser1[t], input: String) : Result[t, String] & Impure =
+        TextParser.runs(p, input)
+
+    pub def pModifier(): TextParser[Modifier, t] = 
+        let pInline = symbol("inline")  *> return(Modifier("inline"));
+        let pPub    = symbol("pub")     *> return(Modifier("pub"));
+        alt(pPub, pInline)
+
+    /// Note pint32 last...
+    /// TODO must implement a longest match version of choice.
+    pub def pLiteral(): TextParser[Literal, t] = 
+        let pUnit = symbol("()")  *> return(UnitL);
+        let pTrue = symbol("true")  *> return(TrueL);
+        let pFalse = symbol("false")  *> return(FalseL);
+        choice(pUnit :: pTrue :: pFalse :: pInt8() :: pInt16() :: pInt64() :: pInt32() :: Nil)
+
+    def pInt8(): TextParser[Literal, t] = 
+        use Text/Regex/MatchEvaluator.{getCapture};
+        let* s = evalLookingAts("(?<body>-?\d+)i8", getCapture(0));
+        let* i = liftResult(Int8.fromString(s));
+        return(Int8L(i))
+
+    def pInt16(): TextParser[Literal, t] = 
+        use Text/Regex/MatchEvaluator.{getCapture};
+        let* s = evalLookingAts("(?<body>-?\d+)i16", getCapture(0));
+        let* i = liftResult(Int16.fromString(s));
+        return(Int16L(i))
+
+    def pInt32(): TextParser[Literal, t] = 
+        use Text/Regex/MatchEvaluator.{getCapture};
+        let* s = evalLookingAts("(?<body>-?\d+)(?:i32)?", getCapture(0));
+        let* i = liftResult(Int32.fromString(s));
+        return(Int32L(i))
+
+    def pInt64(): TextParser[Literal, t] = 
+        use Text/Regex/MatchEvaluator.{getCapture};
+        let* s = evalLookingAts("(?<body>-?\d+)i64", getCapture(0));
+        let* i = liftResult(Int64.fromString(s));
+        return(Int64L(i))
+
+    pub def pExpression(): TextParser[Expression, t] = 
+        let* a = pLiteral();
+        return(LitE(a))
+
+    pub def pName(): TextParser[Name, t] = 
+        Name <&> lookingAts("\p{Lower}(\p{Alnum}|_)*")
+
+    /// Identifer, Literal or parens(expression)
+    pub def pPrimaryExpression(): TextParser[Expression, t] = 
+        let pSNameE = map(SNameE, pName());
+        let pLiteralE = LitE <&> pLiteral();
+        pSNameE <!> pLiteralE
+
 }
+
