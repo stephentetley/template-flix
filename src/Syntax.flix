@@ -72,6 +72,7 @@ namespace TemplateFlix/Syntax {
         case ArrayLoadE(Expression, Expression)
         case ArrayStoreE(Expression, List[Expression], Expression)
         case ArraySliceE(Expression, Option[Expression], Option[Expression])
+        case CastE(Expression, Option[Type], Option[Type])
     }
 
     pub enum Pattern { 

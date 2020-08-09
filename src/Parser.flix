@@ -16,12 +16,12 @@
 
 use TextParser.TextParser;
 use TextParser.TextParser1;
-use TextParser.{return, flatMap, map, alt, swapError, parseError, seqRight, seqLeft, 
+use TextParser.{return, flatMap, map, ap, alt, swapError, parseError, seqRight, seqLeft, 
     tryparse, endOfInput, lookingAts, liftResult, evalLookingAts};
 use TextParser/Combinators.{<*, *>};
-use TextParser/Combinators.{tuple2, choice, many1Till, ignore};
+use TextParser/Combinators.{optional, tuple2, choice, many1Till, ignore, sepBy};
 use TextParser/Text.{whiteSpace,  skip1OneOf, content, restOfLine, peekRestOfLine};
-use TextParser/Token1.{symbol, lexeme};
+use TextParser/Token1.{symbol, lexeme, commaSep};
 
 
 use TemplateFlix/Syntax.{Attribute};
@@ -32,7 +32,8 @@ use TemplateFlix/Syntax.Declaration.{DefD, EnumD, RelationD};
 use TemplateFlix/Syntax.{Expression};
 use TemplateFlix/Syntax.Expression.{SNameE, HoleE, UseE, LitE, ApplyE, UnaryE, BinaryE, IfThenElseE, TupleE, 
     RecordLitE, RecordSelectE, RecordOperationE,
-    ArrayLitE, ArrayNewE, ArrayLoadE, ArrayStoreE, ArraySliceE};
+    ArrayLitE, ArrayNewE, ArrayLoadE, ArrayStoreE, ArraySliceE, 
+    CastE};
 use TemplateFlix/Syntax.{FormalParam};    
 use TemplateFlix/Syntax.{JvmOp};
 use TemplateFlix/Syntax.JvmOp.{ConstructorJ, MethodJ, StaticMethodJ, GetFieldJ, PutFieldJ, 
@@ -68,6 +69,22 @@ namespace TemplateFlix/Parser {
     def <&>(f: a -> b, p2: TextParser[a, t]): TextParser[b, t] = 
         map(f, p2)
 
+    def <&(x: b, p2: TextParser[a, t]): TextParser[b, t] = 
+        p2 *> return(x)
+
+
+    // Haskells ap <*>
+    pub def <*>(mf: TextParser[a -> b, t], p2: TextParser[a, t]): TextParser[b, t] = 
+        ap(mf, p2)
+
+    pub def rightUpdate(ma: TextParser[a, t], p2: TextParser[a -> a, t]): TextParser[a, t] = 
+        use TextParser/Combinators.{optionalWithDefault};
+        let* x = ma;
+        let* fn = optionalWithDefault(p2, v -> v);
+        return(fn(x))
+
+    /// Change TextParser naming...
+    pub def brackets(p: TextParser[r, t]): TextParser[r, t] = TextParser/Token1.squares(p)
 
     /// Note trueP is an illegal name in Flix
 
@@ -80,7 +97,6 @@ namespace TemplateFlix/Parser {
         alt(pPub, pInline)
 
     /// Note pint32 last...
-    /// TODO must implement a longest match version of choice.
     pub def pLiteral(): TextParser[Literal, t] = 
         let pUnit = symbol("()")  *> return(UnitL);
         let pTrue = symbol("true")  *> return(TrueL);
@@ -112,17 +128,44 @@ namespace TemplateFlix/Parser {
         return(Int64L(i))
 
     pub def pExpression(): TextParser[Expression, t] = 
-        let* a = pLiteral();
-        return(LitE(a))
+        pExpression10()
 
-    pub def pName(): TextParser[Name, t] = 
-        Name <&> lookingAts("\p{Lower}(\p{Alnum}|_)*")
+    // cast (postfix)
+    def pExpression10(): TextParser[Expression, t] =
+        pExpression9() `rightUpdate`  pCast()
+
+    inline def pCast(): TextParser[Expression -> Expression, t] =
+        let* _ = symbol("as");
+        let* tpe = optional(pType());
+        let* etpe = optional(symbol("&") *> pType());
+        return(x -> CastE(x, tpe, etpe))
+
+    def pExpression9(): TextParser[Expression, t] = 
+        pPrimaryExpression() 
+
 
     /// Identifer, Literal or parens(expression)
     pub def pPrimaryExpression(): TextParser[Expression, t] = 
         let pSNameE = map(SNameE, pName());
         let pLiteralE = LitE <&> pLiteral();
         pSNameE <!> pLiteralE
+
+    pub def pArrayLitE(): TextParser[Expression, t] = 
+        ArrayLitE <&> brackets(commaSep(pExpression()))
+
+    pub def pName(): TextParser[Name, t] = 
+        Name <&> lookingAts("(\p{Lower}|_)(\p{Alnum}|_)*")
+
+    pub def pPattern(): TextParser[Pattern, t] = 
+        let pLiteralP = LitP <&> pLiteral();
+        let pVarP = VarP <&> pName();
+        pLiteralP <!> pVarP
+
+    pub def pType(): TextParser[Type, t] = 
+        let pUnitT = UnitT <& symbol("Unit");
+        let pVarT = VarT <&> pName();
+        pUnitT <!> pVarT
+
 
 }
 
